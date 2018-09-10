@@ -92,7 +92,7 @@ int alsa_play(void)
     ret = snd_pcm_hw_params_set_buffer_size_near(playback_handle, hw_params, &periodsize);
     if (ret < 0)
     {
-         printf("Unable to set buffer size %li : %s\n", frames * 2, snd_strerror(ret));
+         printf("Unable to set buffer size %li : %s\n", frames, snd_strerror(ret));
 
     }
     periodsize /= 2;
