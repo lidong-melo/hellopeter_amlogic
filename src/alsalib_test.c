@@ -64,7 +64,7 @@ int alsa_play(void)
         perror("snd_pcm_hw_params_set_access");
         exit(1);
     }
-    //5. 初始化采样格式SND_PCM_FORMAT_U8,8位
+    //5. 初始化采样格式SND_PCM_FORMAT_S16_LE,16bit little endian
     ret = snd_pcm_hw_params_set_format(playback_handle, hw_params, SND_PCM_FORMAT_S16_LE);
     if (ret < 0) {
         perror("snd_pcm_hw_params_set_format");
@@ -86,9 +86,9 @@ int alsa_play(void)
         exit(1);
     }
 
-    /* Set period size to 32 frames. */
+    /* Set period size to 48 frames. */
     frames = 48;
-    periodsize = frames ;
+    periodsize = frames*2 ;
     ret = snd_pcm_hw_params_set_buffer_size_near(playback_handle, hw_params, &periodsize);
     if (ret < 0)
     {
