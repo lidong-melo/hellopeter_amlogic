@@ -130,7 +130,7 @@ int alsa_play(void)
         {
         }
         //9. 写音频数据到PCM设备
-        while(ret = snd_pcm_writei(playback_handle, buffer, frames)<0)
+        while((ret = snd_pcm_writei(playback_handle, buffer, frames))<0)
         {
             usleep(1000);
             if (ret == -EPIPE)
