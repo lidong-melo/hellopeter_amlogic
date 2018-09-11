@@ -10,11 +10,6 @@
 
 #define REC_DEVICE_NAME "hw:0,2"
 
-//int alsa_play(void)
-//{
-//	printf("jack is diao\n");
-//}
-
 
 int alsa_play(void)
 {
@@ -44,74 +39,20 @@ int alsa_play(void)
         perror("snd_pcm_open");
         exit(1);
     }
-
-    //2. 分配snd_pcm_hw_params_t结构体
-    ret = snd_pcm_hw_params_malloc(&hw_params);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_malloc");
-        exit(1);
-    }
-    //3. 初始化hw_params
-    ret = snd_pcm_hw_params_any(playback_handle, hw_params);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_any");
-        exit(1);
-    }
-    //4. 初始化访问权限
-    ret = snd_pcm_hw_params_set_access(playback_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_set_access");
-        exit(1);
-    }
-    //5. 初始化采样格式SND_PCM_FORMAT_S16_LE,16bit little endian
-    ret = snd_pcm_hw_params_set_format(playback_handle, hw_params, SND_PCM_FORMAT_S16_LE);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_set_format");
-        exit(1);
-    }
-    //6. 设置采样率，如果硬件不支持我们设置的采样率，将使用最接近的
-    //val = 48000,有些录音采样频率固定为8KHz
-    val = 48000;
-    ret = snd_pcm_hw_params_set_rate_near(playback_handle, hw_params, &val, &dir);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_set_rate_near");
-        exit(1);
-    }
-    //7. 设置通道数量  2
-    //ret = snd_pcm_hw_params_set_channels(playback_handle, hw_params, 1);
-    ret = snd_pcm_hw_params_set_channels(playback_handle, hw_params, 2);
-    if (ret < 0) {
-        perror("snd_pcm_hw_params_set_channels");
-        exit(1);
-    }
-
-    /* Set period size to 48 frames. */
     frames = 48;
-    periodsize = frames*2 ;
-    ret = snd_pcm_hw_params_set_buffer_size_near(playback_handle, hw_params, &periodsize);
-    if (ret < 0)
-    {
-         printf("Unable to set buffer size %li : %s\n", frames, snd_strerror(ret));
-
-    }
-    //periodsize /= 2;
-    //fprintf(stderr,"frames = %d\n", frames);
-
-    ret = snd_pcm_hw_params_set_period_size_near(playback_handle, hw_params, &periodsize, 0);
-    if (ret < 0)
-    {
-        printf("Unable to set period size %li : %s\n", periodsize,  snd_strerror(ret));
-    }
-
-    //8. 设置hw_params
-    ret = snd_pcm_hw_params(playback_handle, hw_params);
-    if (ret < 0) {
+    ret = snd_pcm_set_params(playback_handle,
+                                SND_PCM_FORMAT_S16_LE,
+                                SND_PCM_ACCESS_RW_INTERLEAVED,
+                                2,
+                                48000,
+                                1,
+                                500000);// 0.5sec 
+    if (ret < 0){   
         perror("snd_pcm_hw_params");
         exit(1);
-    }
+    }    
 
-     /* Use a buffer large enough to hold one period */
-    snd_pcm_hw_params_get_period_size(hw_params, &frames, &dir);
+   
 
     size = frames*4; // 2 bytes/sample, 2 channels
     buffer = (char *) malloc(size);
@@ -131,8 +72,9 @@ int alsa_play(void)
         //9. 写音频数据到PCM设备
         while((ret = snd_pcm_writei(playback_handle, buffer, frames))<0)
         {
+            //printf("%d\t",ret);
             usleep(1000);
-            if (ret == -EPIPE)
+            if(ret == -EPIPE)
             {
                   /* EPIPE means underrun */
                   fprintf(stderr, "underrun occurred\n");
@@ -146,13 +88,13 @@ int alsa_play(void)
                       snd_strerror(ret));
             }
         }
+        //printf("%d\t",ret);
+        //usleep(100);
 
     }
+    printf("done\n");
     //10. 关闭PCM设备句柄
     snd_pcm_close(playback_handle);
 
     return 0;
 }
-
-
-//注意：编译的时候应该保持“gcc -o test test.c -L. -lasound”的格式，运行的时候应该保持"./test clip2.wav"这种格式。
