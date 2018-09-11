@@ -31,7 +31,6 @@ int alsa_play(void)
     snd_pcm_t *playback_handle;//PCM设备句柄pcm.h
     snd_pcm_hw_params_t *hw_params;//硬件信息和PCM流配置
     FILE *fp = fopen(wav_file, "rb");
-    printf("play sound");
     if(fp == NULL)
     {
         printf("can't open file");
@@ -95,8 +94,8 @@ int alsa_play(void)
          printf("Unable to set buffer size %li : %s\n", frames, snd_strerror(ret));
 
     }
-    periodsize /= 2;
-    fprintf(stderr,"frames = %d\n", frames);
+    //periodsize /= 2;
+    //fprintf(stderr,"frames = %d\n", frames);
 
     ret = snd_pcm_hw_params_set_period_size_near(playback_handle, hw_params, &periodsize, 0);
     if (ret < 0)
