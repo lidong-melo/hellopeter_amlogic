@@ -1,12 +1,12 @@
-#ifndef COM_HXIONG_ALSA_RECORD_H
-#define COM_HXIONG_ALSA_RECORD_H
+#ifndef _ALSA_RECORD_H
+#define _ALSA_RECORD_H
  
 //宏定义
 #define RECORD_FAIL   -1
 #define RECORD_SUCCESS 0
-#define RECORD_SAMPLE_RATE      8000
+#define RECORD_SAMPLE_RATE      48000
 #define RECORD_BUFFER_TIME_MAX  500000
-#define RECORD_DEVICE_NAME      "hw:0,1"
+#define RECORD_DEVICE_NAME      "hw:1,0"
  
  
 //wav 格式的文件头
@@ -42,6 +42,7 @@ typedef struct{
         // 如有需要其他参数可以继续添加
 } record_params_t;
 //path 为录制的wav音频文件的保存路径
-int do_alsa_record(char* path,record_params_t* params);
+
+int do_alsa_record(char* path, record_params_t* params);
  
 #endif

@@ -65,6 +65,13 @@ static unsigned int get_rate_from_params(record_params_t* params){
 }
  
 static int init_recorder(record_handle_t* handle,record_params_t* params){
+    snd_pcm_hw_params_t *hwparams;
+    unsigned int sample_rate = handle->rate;
+    unsigned int buffer_time;
+    unsigned int period_time ;
+    snd_pcm_uframes_t buffer_size;
+
+
     if(handle==NULL){
         return RECORD_FAIL;
     }
@@ -74,7 +81,7 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
         return RECORD_FAIL;
     }
     //2、录音相关参数设置
-    snd_pcm_hw_params_t *hwparams;
+    
     //构建参数结构体
     snd_pcm_hw_params_alloca(&hwparams);
  
@@ -107,7 +114,7 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     }
  
     handle->rate = get_rate_from_params(params);
-    unsigned int sample_rate = handle->rate;
+    
     //设置采样率
     if(snd_pcm_hw_params_set_rate_near(handle->pcm, hwparams,&sample_rate, 0) < 0) {
         printf("snd_pcm_hw_params_set_channels fail.\n");
@@ -119,8 +126,7 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     }
  
     //
-    unsigned int buffer_time;
-    unsigned int period_time ;
+
     if (snd_pcm_hw_params_get_buffer_time_max(hwparams, &buffer_time, 0) < 0) {
         printf("snd_pcm_hw_params_get_buffer_time_max fail.\n");
         goto init_recorder_fail;
@@ -149,7 +155,7 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     }
  
     //获取相关参数
-    snd_pcm_uframes_t buffer_size;
+    
     snd_pcm_hw_params_get_period_size(hwparams, &(handle->chunk_size), 0);
     snd_pcm_hw_params_get_buffer_size(hwparams, &buffer_size);
     if (handle->chunk_size == buffer_size) {
@@ -189,15 +195,16 @@ static int destroy_recorder(record_handle_t* handle){
 static int create_path(const char *path)
 {
     char *start;
+    char *buffer ;
     mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
  
     if (path[0] == '/')
-        start = strchr(path + 1, '/');
+        start = (char*)strchr(path + 1, '/');
     else
-        start = strchr(path, '/');
+        start = (char*)strchr(path, '/');
  
     while (start) {
-         char *buffer = strdup(path);
+         buffer = (char*)strdup(path);
          buffer[start-path] = 0x00;
  
          if (mkdir(buffer, mode) == -1 && errno != EEXIST) {
@@ -226,9 +233,10 @@ static int safe_open(const char *name)
 }
  
 static int number_to_string(char* dest,size_t src,int len){
+    int index=0;
     if(dest==NULL)
         return RECORD_FAIL;
-    int index=0;
+    
     while(index<len){
        dest[index]=(char)(src&0xff); //取低8 bit
        src=src>>8; //右移
@@ -241,8 +249,8 @@ static int number_to_string(char* dest,size_t src,int len){
 static int do_record(record_handle_t* handle,int fd,int duration){
  
     //计算音频数据长度（秒数 * 采样率 * 帧长度）
-    size_t total_size =duration*handle->rate*handle->bits_per_sample*handle->channels/8;
-    printf("do_record total_size is %d.\n",total_size);
+    long total_size =duration*handle->rate*handle->bits_per_sample*handle->channels/8;
+   
  
     snd_pcm_t* pcm=handle->pcm;
     unsigned char* buffer=handle->buffer;
@@ -250,10 +258,13 @@ static int do_record(record_handle_t* handle,int fd,int duration){
     size_t frame_byte = handle->bits_per_sample*handle->channels/8;
     size_t count = 0;
     int ret = 0;
+    size_t tmp;
+
+     printf("do_record total_size is %d.\n",total_size);
  
     //封装好wav的文件头
     count = sizeof(wav_format_t);
-    size_t tmp=count+total_size -8; //计算chunk size大小
+    tmp=count+total_size -8; //计算chunk size大小
     number_to_string(wav_format.chunk_size,tmp,4);
     number_to_string(wav_format.audio_channels,handle->channels,2);
     number_to_string(wav_format.samplerate,handle->rate,4);
@@ -295,14 +306,17 @@ static int do_record(record_handle_t* handle,int fd,int duration){
     return RECORD_SUCCESS;
 }
  
-int do_alsa_record(char* path,record_params_t* params){
+ 
+int do_alsa_record(char* path, record_params_t* params)
+{
+    int fd;
     record_handle_t record_handle={0};
     if(init_recorder(&record_handle,params)==RECORD_FAIL){
         printf("init_recorder fail.\n");
         return RECORD_FAIL;
     }
  
-    int fd = safe_open(path);  
+    fd = safe_open(path);  
     if(fd>0){
        do_record(&record_handle,fd,params->duration);
        close(fd);  //at last,we must close fd
