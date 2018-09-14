@@ -24,17 +24,7 @@ static wav_format_t wav_format={
     {0,0,0,0}  //data size
 };
  
-//在c文件内部定义,可以认为是录制参数的集合
-typedef struct{
-   snd_pcm_t *pcm;  //alsa pcm handle
-   snd_pcm_format_t format; //pcm 数据的格式
-   unsigned int channels;  //channel
-   unsigned int rate;      //采样率
-   snd_pcm_uframes_t chunk_size; //简单理解为一个channel 1秒产生的frame个数
-   size_t bits_per_sample;   //一个sample包含的bit 数
-   size_t chunk_bytes;    //简单理解为1秒产生的pcm数据大小
-   unsigned char* buffer; //用于保存录制数据的缓存buffer
-} record_handle_t;
+
  
 //pcm format 定义在alsa-lib/include/pcm.h
 static snd_pcm_format_t get_format_from_params(record_params_t* params){
@@ -64,7 +54,7 @@ static unsigned int get_rate_from_params(record_params_t* params){
     return (unsigned int)(params->rate<RECORD_SAMPLE_RATE)?RECORD_SAMPLE_RATE:params->rate; //不能小于8000
 }
  
-static int init_recorder(record_handle_t* handle,record_params_t* params){
+int init_recorder(record_handle_t* handle,record_params_t* params){
     snd_pcm_hw_params_t *hwparams;
     unsigned int sample_rate = handle->rate;
     unsigned int buffer_time;
@@ -119,8 +109,8 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     if(snd_pcm_hw_params_set_rate_near(handle->pcm, hwparams,&sample_rate, 0) < 0) {
         printf("snd_pcm_hw_params_set_channels fail.\n");
         goto init_recorder_fail;
-    }
- 
+    }	
+	
     if(handle->rate != sample_rate){
         printf("The rate %d Hz is not supported, Using %d Hz instead.\n",handle->rate,sample_rate);
     }
@@ -135,6 +125,7 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     if (buffer_time > RECORD_BUFFER_TIME_MAX){
         buffer_time = RECORD_BUFFER_TIME_MAX;
     }
+	buffer_time = 80000; // 200ms, frames =9600
     period_time = buffer_time / 4;
  
  
@@ -142,12 +133,15 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
         printf("snd_pcm_hw_params_set_buffer_time_near fail.\n");
         goto init_recorder_fail;
     }
+	printf("buffer_time= %d\t",buffer_time);
  
     if (snd_pcm_hw_params_set_period_time_near(handle->pcm, hwparams, &period_time, 0) < 0) {
         printf("snd_pcm_hw_params_set_period_time_near fail.\n");
         goto init_recorder_fail;
     }
  
+	printf("period_time= %d\t",period_time);
+	
     //5、设置参数给alsa
     if (snd_pcm_hw_params(handle->pcm, hwparams) < 0) {
         printf("snd_pcm_hw_params fail.\n");
@@ -166,9 +160,14 @@ static int init_recorder(record_handle_t* handle,record_params_t* params){
     //根据设置计算出audio 的chunk 大小
     handle->bits_per_sample = snd_pcm_format_physical_width(handle->format);
     handle->chunk_bytes = (handle->chunk_size*handle->bits_per_sample * handle->channels)/8;
+	
+	
  
     //申请所需的内存
-    handle->buffer = (unsigned char*)malloc(handle->chunk_bytes);
+    handle->buffer = (char*)malloc(handle->chunk_bytes);
+	
+	printf("chunk_size= %d,chunk_bytes= %d,buffer_size= %d\n",handle->chunk_size,handle->chunk_bytes,buffer_size);
+	
     if(!handle->buffer){
         printf("malloc buffer fail.\n");
         goto init_recorder_fail;
@@ -181,7 +180,7 @@ init_recorder_fail:
     return RECORD_FAIL;
 }
  
-static int destroy_recorder(record_handle_t* handle){
+int destroy_recorder(record_handle_t* handle){
     if(handle==NULL){
         printf("destroy_recorder handle is null.\n");
         return RECORD_FAIL;
@@ -253,7 +252,7 @@ static int do_record(record_handle_t* handle,int fd,int duration){
    
  
     snd_pcm_t* pcm=handle->pcm;
-    unsigned char* buffer=handle->buffer;
+    char* buffer=handle->buffer;
     size_t size = handle->chunk_size;
     size_t frame_byte = handle->bits_per_sample*handle->channels/8;
     size_t count = 0;
@@ -294,6 +293,7 @@ static int do_record(record_handle_t* handle,int fd,int duration){
        }
  
        if(ret>0){
+		   //printf("buffer_size=%d\t", ret);
            count = ret*frame_byte;
            if(write(fd,buffer,count)!=count){
                printf("write count(%d) fail.\n",count);

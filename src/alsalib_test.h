@@ -17,6 +17,6 @@
 
 int alsa_play_test(void);
 //int alsa_record(void);
-
+int alsa_test_1(void);
 
 #endif

@@ -1,18 +1,7 @@
 #include "alsa_play.h"
 
 
-//在c文件内部定义,可以认为是录制参数的集合
-typedef struct{
-   snd_pcm_t *handle;//PCM设备句柄pcm.h
-   snd_pcm_uframes_t frames;
-   int size;
-   char * buffer; //用于保存录制数据的缓存buffer
-   
-   snd_pcm_format_t format; //pcm 数据的格式
-   unsigned int channels;  //channel
-   unsigned int rate;      //采样率
-   size_t bits_per_sample;   //一个sample包含的bit 数
-} play_handle_t;
+
 
 
 int alsa_play_init(snd_pcm_t ** handle)
@@ -64,7 +53,7 @@ int alsa_play(void)
 	
 	play_handle.frames = 48;
 	play_handle.size = play_handle.frames*4; // 2 bytes/sample, 2 channels
-    play_handle.buffer = (char *) malloc(play_handle.size);
+    //play_handle.buffer = (char *) malloc(play_handle.size);
 	
     while (1)
     {

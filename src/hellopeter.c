@@ -13,9 +13,10 @@
 
 int main(void)
 {
-	alsa_play();
-	//alsa_play_test();
-	//serial_test(0);
+//	alsa_play();
+	alsa_test_1();
+//	serial_test(0);
+
     // record_params_t aa;
     // aa.duration = 10;
     // aa.format = SND_PCM_FORMAT_S16_LE;

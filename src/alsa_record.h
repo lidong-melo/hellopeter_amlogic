@@ -43,6 +43,21 @@ typedef struct{
 } record_params_t;
 //path 为录制的wav音频文件的保存路径
 
+
+//在c文件内部定义,可以认为是录制参数的集合
+typedef struct{
+   snd_pcm_t *pcm;  //alsa pcm handle
+   snd_pcm_format_t format; //pcm 数据的格式
+   unsigned int channels;  //channel
+   unsigned int rate;      //采样率
+   snd_pcm_uframes_t chunk_size; //简单理解为一个channel 1秒产生的frame个数
+   size_t bits_per_sample;   //一个sample包含的bit 数
+   size_t chunk_bytes;    //简单理解为1秒产生的pcm数据大小
+   char* buffer; //用于保存录制数据的缓存buffer
+} record_handle_t;
+
+int init_recorder(record_handle_t* handle,record_params_t* params);
+int destroy_recorder(record_handle_t* handle);
 int do_alsa_record(char* path, record_params_t* params);
  
 #endif
