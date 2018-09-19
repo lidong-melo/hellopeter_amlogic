@@ -225,7 +225,8 @@ int UART0_Init(int fd, int speed,int flow_ctrl,int databits,int stopbits,int par
 {  
     int err;  
     //设置串口数据帧格式  
-    if (UART0_Set(fd,19200,0,8,1,'N') == FALSE)  
+    //if (UART0_Set(fd,19200,0,8,1,'N') == FALSE)  
+	if (UART0_Set(fd,speed,flow_ctrl,databits,stopbits,parity) == FALSE)  
 	{                                                           
 		return FALSE;  
 	}  
@@ -257,12 +258,13 @@ int UART0_Recv(int fd, char *rcv_buf,int data_len)
     time.tv_usec = 0;  
      
     //使用select实现串口的多路通信  
-    fs_sel = select(fd+1,&fs_read,NULL,NULL,&time);  
-    printf("fs_sel = %d\n",fs_sel);  
+    //fs_sel = select(fd+1,&fs_read,NULL,NULL,&time);  
+	fs_sel = select(fd+1, &fs_read, NULL, NULL, NULL);  
+    //printf("fs_sel = %d\n",fs_sel);  
     if(fs_sel)  
 	{  
 		len = read(fd,rcv_buf,data_len);  
-		printf("I am right!(version1.2) len = %d fs_sel = %d\n",len,fs_sel);  
+		//printf("I am right!(version1.2) len = %d fs_sel = %d\n",len,fs_sel);  
 		return len;  
 	}  
     else  
@@ -345,13 +347,13 @@ int serial_test(int send_recv)
 			{  
 				rcv_buf[len] = '\0';  
 				printf("receive data is %s\n",rcv_buf);  
-				printf("len = %d\n",len);  
+				//printf("len = %d\n",len);  
 			}  
 			else  
 			{  
 				printf("cannot receive data\n");  
 			}  
-			sleep(2);  
+			//sleep(2);  
 		}              
 		UART0_Close(fd);   
 	}  

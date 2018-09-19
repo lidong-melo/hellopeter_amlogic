@@ -7,6 +7,8 @@
 #include "alsa_record.h"
 #include "alsa_play.h"
 #include "alsalib_test.h"
+#include "multi_thread.h"
+#include "serial_test.h"
 
 
 
@@ -15,6 +17,9 @@ int main(void)
 {
 //	alsa_play();
 	alsa_test_1();
+//	alsa_test_2();
+//	main_test();
+//	serial_test(1);
 //	serial_test(0);
 
     // record_params_t aa;
