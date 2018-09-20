@@ -2,6 +2,46 @@
 #include "alsa_record.h"
 #include "alsa_play.h"
 
+
+
+
+void sysUsecTime()
+{
+    struct timeval    tv;
+    struct timezone tz;
+    
+    struct tm         *p;
+    
+    gettimeofday(&tv, &tz);
+    printf("tv_sec:%ld\n",tv.tv_sec);
+    printf("tv_usec:%ld\n",tv.tv_usec);
+    printf("tz_minuteswest:%d\n",tz.tz_minuteswest);
+    printf("tz_dsttime:%d\n",tz.tz_dsttime);
+    
+    p = localtime(&tv.tv_sec);
+    printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
+}
+
+long long get_us_time(void)
+{
+    struct timeval  tv;
+    struct timezone tz;
+    gettimeofday(&tv, &tz);
+	long long sum = 0;
+	sum = (tv.tv_sec-1419998000)*1000000 + tv.tv_usec;
+	return sum;
+    //printf("tv_sec:%ld\n",tv.tv_sec);
+    //printf("tv_usec:%ld\n",tv.tv_usec);
+    //printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
+}
+
+void cal_delta_us_time(long long start, long long end)
+{
+	
+	//printf("%lld - %lld = %lld\n",end,start,end-start);
+}
+
+
 int alsa_play_test(void)
 {
     int i;
@@ -61,11 +101,11 @@ int alsa_play_test(void)
         }
         else
         {
-            printf(",");
+            //printf(",");
             //9. 写音频数据到PCM设备
             while((ret = snd_pcm_writei(play_out_handle, buffer, frames))<0)
             {
-                printf("ret2 = %d\n",ret);
+                //printf("ret2 = %d\n",ret);
                 usleep(1000);
                 if(ret == -EPIPE)
                 {
@@ -95,6 +135,8 @@ int alsa_test_1(void)
 	
 	//////////////////// play
     int ret, ret2;
+	long long start, end;
+	long long start2, end2;
 
 	play_handle_t play_handle;
 	
@@ -127,7 +169,12 @@ int alsa_test_1(void)
 	
 	while (1) //(total_size>0) { //写入的数据超过total size就结束
 	{
+		start2 = get_us_time();
+		start = get_us_time();
 		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, record_handle.chunk_bytes);
+		end = get_us_time();
+		//printf("read----------");
+		cal_delta_us_time(start, end);
 		if (ret == -EAGAIN ) {
 			snd_pcm_wait(record_handle.pcm, 1000);
 		} else if (ret == -EPIPE) {
@@ -145,10 +192,11 @@ int alsa_test_1(void)
 			
 			//while( ret > 0)
 			{
-				printf("read = %d\n",ret);
+				//printf("read = %d\n",ret);
+				start = get_us_time();
 				while((ret2 = snd_pcm_writei(play_handle.handle, play_handle.buffer, play_handle.frames))<0)
 				{
-					printf("write = %d\n",ret2);
+					//printf("write = %d\n",ret2);
 					usleep(1000);
 					if(ret2 == -EPIPE)
 					{
@@ -162,12 +210,19 @@ int alsa_test_1(void)
 						fprintf(stderr, "error from writei: %s\n", snd_strerror(ret2));
 					}
 				}
-				printf("ret2=%d\t",ret2);
+				end = get_us_time();
+				//printf("write----------");
+				cal_delta_us_time(start, end);
+				//printf("ret2=%d\t",ret2);
 				//ret -= ret2;
 				//play_handle.buffer += ret2;
 			}
 			//total_size -= count;
 		}
+		end2 = get_us_time();
+		//printf("total----------");
+		cal_delta_us_time(start2, end2);
+		
     }
 	destroy_recorder(&record_handle);
 	///////////////////// record

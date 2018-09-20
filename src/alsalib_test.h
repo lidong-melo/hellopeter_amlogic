@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include "alsa/asoundlib.h"
 
+#include <time.h>
+#include <sys/time.h>
+
 
 
 #define PLAY_IN_DEVICE_NAME "hw:1,0"
