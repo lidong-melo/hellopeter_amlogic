@@ -11,9 +11,10 @@
 
 
 #define PLAY_IN_DEVICE_NAME "hw:1,0"
-#define PLAY_OUT_DEVICE_NAME "hw:0,2"
-
 #define RECORD_IN_DEVICE_NAME "hw:0,3"
+
+
+#define PLAY_OUT_DEVICE_NAME "hw:0,2"
 #define RECORD_OUT_DEVICE_NAME "hw:1,0"
 
 

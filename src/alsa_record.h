@@ -6,7 +6,9 @@
 #define RECORD_SUCCESS 0
 #define RECORD_SAMPLE_RATE      48000
 #define RECORD_BUFFER_TIME_MAX  500000
-#define RECORD_DEVICE_NAME      "hw:1,0"
+//#define RECORD_DEVICE_NAME      "hw:1,0"
+
+
  
  
 //wav 格式的文件头
@@ -56,7 +58,7 @@ typedef struct{
    char* buffer; //用于保存录制数据的缓存buffer
 } record_handle_t;
 
-int init_recorder(record_handle_t* handle,record_params_t* params);
+int init_recorder(record_handle_t* handle,record_params_t* params, const char * device_name);
 int destroy_recorder(record_handle_t* handle);
 int do_alsa_record(char* path, record_params_t* params);
  

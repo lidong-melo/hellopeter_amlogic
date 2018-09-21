@@ -17,13 +17,35 @@ int alsa_play_init(snd_pcm_t ** handle)
                                 SND_PCM_ACCESS_RW_INTERLEAVED,
                                 2,
                                 48000,
-                                1,
+                                1, //soft_resample
                                 500000);// 0.5sec 
     if (ret < 0)
         perror("snd_pcm_hw_params");
 	
 	return ret;
 }
+
+int alsa_play_init_2(snd_pcm_t ** handle)
+{
+    int ret;	
+    //1. 打开PCM，最后一个参数为0意味着标准配置
+    ret = snd_pcm_open(handle, RECORD_OUT_DEVICE_NAME, SND_PCM_STREAM_PLAYBACK, 0);
+    if (ret < 0)
+        perror("snd_pcm_open");
+    
+    ret = snd_pcm_set_params( * handle,
+                                SND_PCM_FORMAT_S16_LE,
+                                SND_PCM_ACCESS_RW_INTERLEAVED,
+                                8,
+                                16000,
+                                1, //soft_resample
+                                500000);// 0.5sec 
+    if (ret < 0)
+        perror("snd_pcm_hw_params");
+	
+	return ret;
+}
+
 
 int alsa_play_uninit(snd_pcm_t * handle)
 {
