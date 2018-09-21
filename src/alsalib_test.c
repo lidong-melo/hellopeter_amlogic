@@ -248,7 +248,7 @@ int alsa_test_2(void)
 	if (ret <0)
 		exit(1);
 	
-	play_handle.frames = 1024;
+	//play_handle.frames = 1024;
 	//play_handle.size = play_handle.frames*4; // 2 bytes/sample, 2 channels
     //play_handle.buffer = (char *) malloc(play_handle.size);
 	//////////////// play end
@@ -268,12 +268,13 @@ int alsa_test_2(void)
 	
 	//record_handle.size = 4096;
 	play_handle.buffer = record_handle.buffer;
+	play_handle.frames = record_handle.chunk_size*4;
 	
 	while (1) //(total_size>0) { //写入的数据超过total size就结束
 	{
 		start2 = get_us_time();
 		start = get_us_time();
-		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, record_handle.chunk_bytes*4);
+		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, play_handle.frames);
 		end = get_us_time();
 		//printf("read----------");
 		cal_delta_us_time(start, end);

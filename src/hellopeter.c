@@ -16,8 +16,8 @@
 int main(void)
 {
 //	alsa_play();
-	alsa_test_1();
-//	alsa_test_2();
+//	alsa_test_1();
+	alsa_test_2();
 //	main_test();
 //	serial_test(1);
 //	serial_test(0);
