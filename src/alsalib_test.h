@@ -30,5 +30,6 @@
 #define PERIODS 4
 
 int alsa_test(int dir);
+void *thread_alsa_test( void *arg);
 
 #endif

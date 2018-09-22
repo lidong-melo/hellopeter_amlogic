@@ -3,25 +3,6 @@
 #include "alsa_play.h"
 
 
-
-
-void sysUsecTime()
-{
-    struct timeval    tv;
-    struct timezone tz;
-    
-    struct tm         *p;
-    
-    gettimeofday(&tv, &tz);
-    printf("tv_sec:%ld\n",tv.tv_sec);
-    printf("tv_usec:%ld\n",tv.tv_usec);
-    printf("tz_minuteswest:%d\n",tz.tz_minuteswest);
-    printf("tz_dsttime:%d\n",tz.tz_dsttime);
-    
-    p = localtime(&tv.tv_sec);
-    printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
-}
-
 long long get_us_time(void)
 {
     struct timeval  tv;
@@ -101,7 +82,7 @@ int alsa_test(int dir)
 			printf("snd_pcm_readi return ESTRPIPE.\n");
 		} else if (ret < 0) {
 			printf("snd_pcm_readi return fail.\n");
-			return PLAY_FAIL;
+			//return PLAY_FAIL;
 		}
 
 		if(ret>0)
@@ -127,6 +108,12 @@ int alsa_test(int dir)
 	destroy_recorder(&record_handle);
 	
 	return RECORD_SUCCESS;
+}
+
+void *thread_alsa_test( void *arg)
+{
+    alsa_test(*((int*)arg));
+	return ((void*)0);
 }
 
 
