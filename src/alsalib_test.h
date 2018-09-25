@@ -32,4 +32,7 @@
 int alsa_test(int dir);
 void *thread_alsa_test( void *arg);
 
+extern int g_play_flag;
+extern int g_record_flag;
+
 #endif

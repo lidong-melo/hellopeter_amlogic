@@ -69,6 +69,10 @@ enum GPIONumber {
 
 } ;
 
+int gpio_init(int gpio_id);
+int gpio_uninit(int gpio_id);
+
+
 int gpio_test(int gpio_id);
 int gpioExport ( jetsonGPIO gpio ) ;
 int gpioUnexport ( jetsonGPIO gpio ) ;

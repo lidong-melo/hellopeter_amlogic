@@ -1,31 +1,36 @@
 #include "alsalib_test.h"
 #include "alsa_record.h"
 #include "alsa_play.h"
+#include "serial_test.h"
+#include <pthread.h>
 
+int g_play_flag = FALSE;
+int g_record_flag = FALSE;
 
-long long get_us_time(void)
-{
-    struct timeval  tv;
-    struct timezone tz;
-    gettimeofday(&tv, &tz);
-	long long sum = 0;
-	sum = (tv.tv_sec-1419998000)*1000000 + tv.tv_usec;
-	return sum;
-    //printf("tv_sec:%ld\n",tv.tv_sec);
-    //printf("tv_usec:%ld\n",tv.tv_usec);
-    //printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
-}
+// long long get_us_time(void)
+// {
+    // struct timeval  tv;
+    // struct timezone tz;
+    // gettimeofday(&tv, &tz);
+	// long long sum = 0;
+	// sum = (tv.tv_sec-1419998000)*1000000 + tv.tv_usec;
+	// return sum;
+    // //printf("tv_sec:%ld\n",tv.tv_sec);
+    // //printf("tv_usec:%ld\n",tv.tv_usec);
+    // //printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
+// }
 
-void cal_delta_us_time(long long start, long long end)
-{
+// void cal_delta_us_time(long long start, long long end)
+// {
 	
-	//printf("%lld - %lld = %lld\n",end,start,end-start);
-}
+	// //printf("%lld - %lld = %lld\n",end,start,end-start);
+// }
 
 
 int alsa_test(int dir)
 {
     int ret;
+	int aaa = 0;
 
 	play_handle_t play_handle;
 	record_handle_t record_handle;
@@ -38,7 +43,7 @@ int alsa_test(int dir)
 		record_handle.device_name = (char*)PLAY_IN_DEVICE_NAME;
 	}
 	else if(dir == AUDIO_RECORD)
-	{
+	{	
 		play_handle.channels = RECORD_CHANNELS;
 		play_handle.rate = RECORD_RATE;
 		play_handle.device_name = (char*)RECORD_OUT_DEVICE_NAME;
@@ -72,6 +77,42 @@ int alsa_test(int dir)
 	
 	while (1)
 	{
+		aaa ++;
+		//printf("thread_id:%d,dir = %d,aaa=%d\n",pthread_self(),dir,aaa);
+		if(dir == AUDIO_PLAY)
+		{
+			if(g_play_flag == FALSE)
+			{
+				printf("~~~~~play stop\n");
+				usleep(500000); // 500ms
+				continue;
+			}
+			else
+			{
+				//printf("%d dir:%d,g_play:%d,g_record:%d\n",pthread_self(),dir,g_play_flag, g_record_flag);
+				//continue;
+				printf("~");
+			}
+		}
+		else if(dir == AUDIO_RECORD)
+		{
+			if (g_record_flag == FALSE)
+			{
+				printf("!!!!!record stop\n");
+				usleep(500000);
+				continue;
+			}
+			else
+			{
+				//printf("%d dir:%d,g_play:%d,g_record:%d\n",pthread_self(),dir,g_play_flag, g_record_flag);
+				//continue;
+				printf("!");
+			}
+		}
+		
+		
+		//printf("^^^");
+		//printf("^^^ jump out!thread_id:%d,dir = %d,aaa=%d\n",pthread_self(),dir,aaa);
 		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, play_handle.frames);
 		if (ret == -EAGAIN ) {
 			snd_pcm_wait(record_handle.pcm, 1000);
@@ -99,7 +140,7 @@ int alsa_test(int dir)
 				}
 				else if (ret < 0)
 				{
-					fprintf(stderr, "error from writei: %s\n", snd_strerror(ret));
+					fprintf(stderr, "dir %d, error from writei: %s\n", dir, snd_strerror(ret));
 				}
 			}
 		}
