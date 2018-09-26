@@ -44,7 +44,7 @@ int UART0_Open(int fd,char* port)
 	{  
 		//printf("isatty success!\n");  
 	}                
-	printf("fd->open=%d\n",fd);  
+	printf("fd->open=%d success!\n",fd);  
 	return fd;  
 }  
 // /******************************************************************* 

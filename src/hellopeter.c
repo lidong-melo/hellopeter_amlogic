@@ -140,14 +140,15 @@ void *thread_serial_test( void *arg)
 	char line_buf[256];
 	uint32_t line_len = 0;
     
-	char *str_temp;
+	//char *str_temp;
 	char str_play[] = "start play";
 	char str_record[] = "start record";
 	char str_stop[] = "stop";
-	char find_ret = 0;
+	char str_fail[] = "can't recognize: ";
+	char str_temp[300];
 	
-	GPIONumber gpio_id = gpio500;
 	//GPIONumber gpio_id = gpio500;
+	GPIONumber gpio_id = gpio505;
 	
 	//printf("%d,%d,%d",strlen(str_play),strlen(str_record),strlen(str_stop));
 	
@@ -169,15 +170,15 @@ void *thread_serial_test( void *arg)
 		app_fifo_put(&recv_fifo_p, rcv_buf[0]);
 		if (rcv_buf[0] == '\n')
 		{
-			find_ret = 0;
 			line_len = app_fifo_length(&recv_fifo_p);
 			app_fifo_read(&recv_fifo_p, (u8*)line_buf, &line_len);
 			line_buf[line_len] = '\0';
 
+			printf("uart recv: %s",line_buf);
+			
 			if (strstr(line_buf, str_stop) != NULL)
 			{
-				find_ret = 1;
-				str_temp = str_stop;
+				UART0_Send(fd,str_stop,strlen(str_stop));
 				flag_play = FALSE;
 				flag_record = FALSE;
 				gpioSetValue(gpio_id, high);
@@ -185,36 +186,31 @@ void *thread_serial_test( void *arg)
 			}
 			else if (strstr(line_buf, str_play) != NULL)
 			{
-				find_ret = 2;
-				str_temp = str_play;
+				UART0_Send(fd,str_play,strlen(str_play));
 				flag_play = TRUE;
 				printf("start play!\n");
 			}
 			else if (strstr(line_buf, str_record) != NULL)
 			{
-				find_ret = 3;
-				str_temp = str_record;
+				UART0_Send(fd,str_record,strlen(str_record));
 				flag_record = TRUE;
 				gpioSetValue(gpio_id, low);
 				printf("start record!\n");
 			}
-			
-				
-			if (find_ret == 0)
-				printf("can't recognize: %s\n",line_buf);
 			else
 			{
-				printf("recv: %s\n",line_buf);
-				len = UART0_Send(fd,str_temp,strlen(str_temp));
+				strcpy(str_temp, str_fail);
+				strcat(str_temp, line_buf);
+				len = UART0_Send(fd,str_temp,strlen(str_temp)-1);//最后一个回车不发送
 				if(len == 0)
 					printf("uart send failed!\n");
 				else
-					printf("send: %s\n",str_temp);
+					printf("uart send: %s",str_temp);
 			}
 		}
 	}
-	gpio_uninit(gpio_id);	
-	UART0_Close(fd);  
+	gpio_uninit(gpio_id);
+	UART0_Close(fd);
 }  
 
 
@@ -236,7 +232,7 @@ int main(int argc, char *argv[])
     if (ret_thrd1 != 0) {
         printf("Create play thread failed!\n");
     } else {
-        printf("Create play thread !\n");
+        printf("Create play thread successfully!\n");
     }
 
     if (ret_thrd2 != 0) {
