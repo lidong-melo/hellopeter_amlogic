@@ -108,7 +108,7 @@ init_recorder_fail:
 }
 
  
-int destroy_recorder(record_handle_t* handle){
+int uninit_recorder(record_handle_t* handle){
     if(handle==NULL){
         printf("destroy_recorder handle is null.\n");
         return RECORD_FAIL;

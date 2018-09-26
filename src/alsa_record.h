@@ -25,6 +25,6 @@ typedef struct{
 } record_handle_t;
 
 int init_recorder(record_handle_t* handle);
-int destroy_recorder(record_handle_t* handle);
+int uninit_recorder(record_handle_t* handle);
  
 #endif

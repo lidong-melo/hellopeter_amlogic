@@ -2,7 +2,7 @@
 ## sample Makefile for hellopeter
 #
 #
-OBJ = hellopeter.o alsalib_test.o serial_test.o alsa_record.o alsa_play.o serial_test.o gpio.o fifo.o
+OBJ = hellopeter.o alsa_record.o alsa_play.o serial_port.o gpio.o fifo.o
 CFLAGS = -Wall -Wextra
 #LDFLAGS = -lasound -L~/buildroot_openlinux_kernel_4.9_20180810/buildroot/package/hellopeter/src/lib
 LDFLAGS = -lasound -L/home/puzzlemaster/buildroot_openlinux_kernel_4.9_20180810/buildroot/package/hellopeter/src/lib -lpthread

@@ -1,24 +1,134 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
-
-//#include "serial_test.h"
-#include "alsa/asoundlib.h"
-#include "alsa_record.h"
-#include "alsa_play.h"
-#include "alsalib_test.h"
-//#include "multi_thread.h"
-#include "serial_test.h"
-#include "gpio.h"
-#include "fifo.h"
+#include "hellopeter.h"
 
 
 
 app_fifo_t recv_fifo_p;
 uint8_t recv_fifo_buf[256];
 
-void *thread_serial( void *arg)
+
+static int flag_play = FALSE;
+static int flag_record = FALSE;
+
+
+void *thread_alsa_test(void * arg)
+{
+    int ret;
+	int dir = *((int*)arg);
+
+	play_handle_t play_handle;
+	record_handle_t record_handle;
+	
+	if(dir == AUDIO_PLAY)
+	{
+		play_handle.channels = PLAY_CHANNELS;
+		play_handle.rate = PLAY_RATE;
+		play_handle.device_name = (char*)PLAY_OUT_DEVICE_NAME;
+		record_handle.device_name = (char*)PLAY_IN_DEVICE_NAME;
+	}
+	else if(dir == AUDIO_RECORD)
+	{	
+		play_handle.channels = RECORD_CHANNELS;
+		play_handle.rate = RECORD_RATE;
+		play_handle.device_name = (char*)RECORD_OUT_DEVICE_NAME;
+		record_handle.device_name = (char*)RECORD_IN_DEVICE_NAME;
+	
+	}
+
+	play_handle.format = SND_PCM_FORMAT_S16_LE;	
+	
+	record_handle.channels = play_handle.channels;
+	record_handle.rate =  play_handle.rate;
+	record_handle.format =  play_handle.format;
+	record_handle.buffer_time = BUFFER_TIME;
+	record_handle.periods = PERIODS;
+	
+	
+								
+	if (alsa_play_init(&play_handle) <0)
+	{
+		printf("play init fail.\n");
+		return ((void*)PLAY_FAIL);
+	}
+	
+    if(init_recorder(&record_handle)==PLAY_FAIL){
+        printf("init_recorder fail.\n");
+        return ((void*)PLAY_FAIL);
+    }
+	
+	play_handle.buffer = record_handle.buffer;
+	play_handle.frames = record_handle.chunk_size*record_handle.periods;
+	// periods =4
+	
+	while (1)
+	{
+		if(dir == AUDIO_PLAY)
+		{
+			if(flag_play == FALSE)
+			{
+				//printf("~~~~~play stop\n");
+				usleep(50000); // 50ms
+				continue;
+			}
+			else
+			{
+				printf("~");
+			}
+		}
+		else if(dir == AUDIO_RECORD)
+		{
+			if (flag_record == FALSE)
+			{
+				//printf("!!!!!record stop\n");
+				usleep(50000);
+				continue;
+			}
+			else
+			{
+				printf("^");
+			}
+		}
+		
+		
+		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, play_handle.frames);
+		if (ret == -EAGAIN ) {
+			snd_pcm_wait(record_handle.pcm, 1000);
+		} else if (ret == -EPIPE) {
+			snd_pcm_prepare(record_handle.pcm);
+			printf("snd_pcm_readi return EPIPE.\n");
+		} else if (ret == -ESTRPIPE) {
+			printf("snd_pcm_readi return ESTRPIPE.\n");
+		} else if (ret < 0) {
+			printf("snd_pcm_readi return fail.\n");
+		}
+
+		if(ret>0)
+		{
+			while((ret = snd_pcm_writei(play_handle.pcm, play_handle.buffer, play_handle.frames))<0)
+			{
+				usleep(1000);
+				if(ret == -EPIPE)
+				{
+					// EPIPE means underrun 
+					fprintf(stderr, "underrun occurred\n");
+					//完成硬件参数设置，使设备准备好
+					snd_pcm_prepare(play_handle.pcm);
+				}
+				else if (ret < 0)
+				{
+					fprintf(stderr, "dir %d, error from writei: %s\n", dir, snd_strerror(ret));
+				}
+			}
+		}
+		
+    }
+	uninit_recorder(&record_handle);
+	
+	return ((void*)RECORD_SUCCESS);
+}
+
+
+
+void *thread_serial_test( void *arg)
 {  
     int fd;                            //文件描述符  
     int err;                           //返回调用函数的状态  
@@ -45,6 +155,7 @@ void *thread_serial( void *arg)
 	
     fd = UART0_Open(fd, port_id);
 	gpio_init(gpio_id);
+	
     do
 	{  
 		err = UART0_Init(fd,115200,0,8,1,'N');  
@@ -54,12 +165,12 @@ void *thread_serial( void *arg)
                                        
 	while (1) //循环读取数据  
 	{    
-		len = UART0_Recv(fd, rcv_buf,1);
+		UART0_Recv(fd, rcv_buf,1);
 		app_fifo_put(&recv_fifo_p, rcv_buf[0]);
 		if (rcv_buf[0] == '\n')
 		{
 			find_ret = 0;
-			line_len = fifo_length(&recv_fifo_p);
+			line_len = app_fifo_length(&recv_fifo_p);
 			app_fifo_read(&recv_fifo_p, (u8*)line_buf, &line_len);
 			line_buf[line_len] = '\0';
 
@@ -67,22 +178,25 @@ void *thread_serial( void *arg)
 			{
 				find_ret = 1;
 				str_temp = str_stop;
-				g_play_flag = FALSE;
-				g_record_flag = FALSE;
+				flag_play = FALSE;
+				flag_record = FALSE;
 				gpioSetValue(gpio_id, high);
+				printf("stop play & record!\n");
 			}
 			else if (strstr(line_buf, str_play) != NULL)
 			{
 				find_ret = 2;
 				str_temp = str_play;
-				g_play_flag = TRUE;
+				flag_play = TRUE;
+				printf("start play!\n");
 			}
 			else if (strstr(line_buf, str_record) != NULL)
 			{
 				find_ret = 3;
 				str_temp = str_record;
-				g_record_flag = TRUE;
-				gpioSetValue(gpio_id, low);				
+				flag_record = TRUE;
+				gpioSetValue(gpio_id, low);
+				printf("start record!\n");
 			}
 			
 				
@@ -91,11 +205,11 @@ void *thread_serial( void *arg)
 			else
 			{
 				printf("recv: %s\n",line_buf);
-				UART0_Send(fd,str_temp,strlen(str_temp));
+				len = UART0_Send(fd,str_temp,strlen(str_temp));
 				if(len == 0)
 					printf("uart send failed!\n");
 				else
-					printf("send %s\n",str_temp);
+					printf("send: %s\n",str_temp);
 			}
 		}
 	}
@@ -106,76 +220,40 @@ void *thread_serial( void *arg)
 
 
 
-int main_test()
+int main(int argc, char *argv[])
 {
+	int arg1 = AUDIO_PLAY;
+    int arg2 = AUDIO_RECORD;
+	int ret_thrd1, ret_thrd2, ret_thrd3;
+    
+	pthread_t thread1, thread2, thread3;
 
-    int tmp1, tmp2;
-    void *retval;
-    pthread_t thread1, thread2, thread3;
-    int id1 = 1;
-    int id2 = 2;
-
-    int ret_thrd1, ret_thrd2, ret_thrd3;
-
-	
-    ret_thrd1 = pthread_create(&thread1, NULL, &thread_alsa_test, (void*)&id1);
-    ret_thrd2 = pthread_create(&thread2, NULL, &thread_alsa_test, (void*)&id2);
-	ret_thrd3 = pthread_create(&thread2, NULL, &thread_serial, (void*)0);
+    ret_thrd1 = pthread_create(&thread1, NULL, &thread_alsa_test, (void*)&arg1);
+    ret_thrd2 = pthread_create(&thread2, NULL, &thread_alsa_test, (void*)&arg2);
+	ret_thrd3 = pthread_create(&thread2, NULL, &thread_serial_test, (void*)0);
 
     // 线程创建成功，返回0,失败返回失败号
     if (ret_thrd1 != 0) {
-        printf("线程1创建失败\n");
+        printf("Create play thread failed!\n");
     } else {
-        printf("线程1创建成功,%d\n",ret_thrd1);
+        printf("Create play thread !\n");
     }
 
     if (ret_thrd2 != 0) {
-        printf("线程2创建失败\n");
+        printf("Create record thread failed!\n");
     } else {
-        printf("线程2创建成功,%d\n",ret_thrd2);
+        printf("Create record thread successfully!\n");
     }
 	
     if (ret_thrd3 != 0) {
-        printf("线程3创建失败\n");
+        printf("Create serial thread failed!\n");
     } else {
-        printf("线程3创建成功\n");
+        printf("Create serial thread successfully!\n");
     }	
 
-    // //同样，pthread_join的返回值成功为0
-    // tmp1 = pthread_join(thread1, &retval);
-    // printf("thread1 return value(retval) is %d\n", (int)retval);
-    // printf("thread1 return value(tmp) is %d\n", tmp1);
-    // if (tmp1 != 0) {
-        // printf("cannot join with thread1\n");
-    // }
-    // printf("thread1 end\n");
-
-    // tmp2 = pthread_join(thread1, &retval);
-    // printf("thread2 return value(retval) is %d\n", (int)retval);
-    // printf("thread2 return value(tmp) is %d\n", tmp1);
-    // if (tmp2 != 0) {
-        // printf("cannot join with thread2\n");
-    // }
-    // printf("thread2 end\n");
 	while(1)
 	{
 		sleep(1);
 	}
-
-}
-
- 
-
-
-int main(int argc, char *argv[])
-{
-	GPIONumber gpioao_8 = gpio505;
-	GPIONumber gpioao_3 = gpio500;
-	//alsa_test(AUDIO_PLAY);
-//	alsa_test(AUDIO_RECORD);
-//	gpio_test(gpioao_3);
-	main_test();
-//	thread_serial();
-//	serial_test(0);
-    return 0;
-}   
+	return 0;
+} 

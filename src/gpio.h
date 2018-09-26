@@ -39,12 +39,19 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+
  /****************************************************************
  * Constants
  ****************************************************************/
  
 #define SYSFS_GPIO_DIR "/sys/class/gpio"
-//#define POLL_TIMEOUT (3 * 1000) /* 3 seconds */
 #define MAX_BUF 64
 
 typedef unsigned int jetsonGPIO ;
@@ -74,15 +81,15 @@ int gpio_uninit(int gpio_id);
 
 
 int gpio_test(int gpio_id);
-int gpioExport ( jetsonGPIO gpio ) ;
-int gpioUnexport ( jetsonGPIO gpio ) ;
-int gpioSetDirection ( jetsonGPIO, pinDirection out_flag ) ;
-int gpioSetValue ( jetsonGPIO gpio, pinValue value ) ;
-int gpioGetValue ( jetsonGPIO gpio, unsigned int *value ) ;
-int gpioSetEdge ( jetsonGPIO gpio, char *edge ) ;
-int gpioOpen ( jetsonGPIO gpio ) ;
-int gpioClose ( int fileDescriptor ) ;
-int gpioActiveLow ( jetsonGPIO gpio, unsigned int value ) ;
+int gpioExport ( jetsonGPIO gpio );
+int gpioUnexport ( jetsonGPIO gpio );
+int gpioSetDirection ( jetsonGPIO, pinDirection out_flag );
+int gpioSetValue ( jetsonGPIO gpio, pinValue value );
+int gpioGetValue ( jetsonGPIO gpio, unsigned int *value );
+int gpioSetEdge ( jetsonGPIO gpio, char *edge );
+int gpioOpen ( jetsonGPIO gpio );
+int gpioClose ( int fileDescriptor );
+int gpioActiveLow ( jetsonGPIO gpio, unsigned int value );
 
 
 

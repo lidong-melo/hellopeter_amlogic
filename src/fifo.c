@@ -1,12 +1,13 @@
 #include "fifo.h"
 
 
-uint32_t fifo_length(app_fifo_t * p_fifo)
+static uint32_t fifo_length(app_fifo_t * p_fifo)
 {
     uint32_t tmp = p_fifo->read_pos;
     return p_fifo->write_pos - tmp;
 }
 
+#define FIFO_LENGTH fifo_length(p_fifo)  //**< Macro for calculating the FIFO length. */
 
 //**@brief Put one byte to the FIFO. */
 static void fifo_put(app_fifo_t * p_fifo, uint8_t byte)
@@ -51,6 +52,12 @@ uint32_t app_fifo_init(app_fifo_t * p_fifo, uint8_t * p_buf, uint16_t buf_size)
     p_fifo->write_pos     = 0;
 
     return SUCCESS;
+}
+
+
+uint32_t app_fifo_length(app_fifo_t * p_fifo)
+{
+    return fifo_length(p_fifo);	
 }
 
 

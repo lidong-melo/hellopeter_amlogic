@@ -1,5 +1,5 @@
-#ifndef _SERIAL_TEST_
-#define _SERIAL_TEST_
+#ifndef _SERIAL_PORT_
+#define _SERIAL_PORT_
 
 //宏定义  
 #define FALSE  -1  

@@ -1,12 +1,20 @@
-#ifndef _ALSALIB_TEST_H
-#define _ALSALIB_TEST_H
+#ifndef _HELLOPETER_H
+#define _HELLOPETER_H
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "alsa/asoundlib.h"
+#include <pthread.h>
+#include <unistd.h>
 
-#include <time.h>
-#include <sys/time.h>
+//#include "serial_test.h"
+#include "alsa/asoundlib.h"
+#include "alsa_record.h"
+#include "alsa_play.h"
+#include "serial_port.h"
+#include "gpio.h"
+#include "fifo.h"
+
+
 
 #define AUDIO_PLAY 1
 #define AUDIO_RECORD 2
@@ -29,10 +37,5 @@
 #define BUFFER_TIME	64000
 #define PERIODS 4
 
-int alsa_test(int dir);
-void *thread_alsa_test( void *arg);
-
-extern int g_play_flag;
-extern int g_record_flag;
 
 #endif

@@ -27,9 +27,7 @@ typedef struct
 } app_fifo_t;
 
 
-uint32_t fifo_length(app_fifo_t * p_fifo);
-
-#define FIFO_LENGTH fifo_length(p_fifo)  /**< Macro for calculating the FIFO length. */
+uint32_t app_fifo_length(app_fifo_t * p_fifo);
 
 
 // /**@brief Function for initializing the FIFO.
