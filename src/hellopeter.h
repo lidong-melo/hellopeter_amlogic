@@ -13,6 +13,7 @@
 #include "serial_port.h"
 #include "gpio.h"
 #include "fifo.h"
+#include "log.h"
 
 
 

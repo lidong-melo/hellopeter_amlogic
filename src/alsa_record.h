@@ -1,5 +1,14 @@
 #ifndef _ALSA_RECORD_H
 #define _ALSA_RECORD_H
+#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include "alsa/asoundlib.h"  //alsa-lib相关的头文件
+
+#include "log.h"
  
 //宏定义
 #define RECORD_FAIL   -1

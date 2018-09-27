@@ -10,7 +10,7 @@ int alsa_play_init(play_handle_t * play_handle)
     //1. 打开PCM，最后一个参数为0意味着标准配置
     ret = snd_pcm_open(&play_handle->pcm, (const char*)(play_handle->device_name), SND_PCM_STREAM_PLAYBACK, 0);
     if (ret < 0)
-        perror("snd_pcm_open");
+        log_out("snd_pcm_open");
     
     ret = snd_pcm_set_params( play_handle->pcm,
                                 play_handle->format,
@@ -20,7 +20,7 @@ int alsa_play_init(play_handle_t * play_handle)
                                 1, //soft_resample
                                 500000);// 0.5sec 
     if (ret < 0)
-        perror("snd_pcm_hw_params");
+        log_out("snd_pcm_hw_params");
 	
 	return ret;
 }

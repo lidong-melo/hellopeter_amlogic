@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "alsa/asoundlib.h"
+#include "log.h"
 
 #define PLAY_FAIL   -2
 #define PLAY_SUCCESS 0
+
 
 typedef struct{
    snd_pcm_t *pcm;//PCM设备句柄pcm.h

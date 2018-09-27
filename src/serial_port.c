@@ -1,10 +1,5 @@
 //串口相关的头文件  
-#include<stdio.h>      //标准输入输出定义
-#include<stdlib.h>     //标准函数库定义 
-#include<unistd.h>     //Unix 标准函数定义
-#include<fcntl.h>      //文件控制定义
-#include<termios.h>    //PPSIX 终端控制定义
-#include<errno.h>      //错误号定义
+
 //#include<string.h>  
 
 #include "serial_port.h"
@@ -18,33 +13,33 @@
 int UART0_Open(int fd,char* port)  
 {  
      
-	fd = open( port, O_RDWR|O_NOCTTY|O_NDELAY);  
+	fd = open( port, O_RDWR|O_NOCTTY|O_NDELAY);
 	if (FALSE == fd)  
 	{  
-		perror("Can't Open Serial Port");  
+		log_out("Can't Open Serial Port");  
 		return(FALSE);  
 	}  
 	//恢复串口为阻塞状态                                 
 	if(fcntl(fd, F_SETFL, 0) < 0)  
 	{  
-		//printf("fcntl failed!\n");  
+		log_out("fcntl failed!\n");  
 		return(FALSE);  
 	}       
 	else  
 	{  
-		//printf("fcntl=%d\n",fcntl(fd, F_SETFL,0));  
+		log_out("fd = %d\n",fcntl(fd, F_SETFL,0));  
 	}  
-	//测试是否为终端设备      
-	if(0 == isatty(STDIN_FILENO))  
-	{  
-		//printf("standard input is not a terminal device\n");  
-		return(FALSE);  
-	}  
-	else  
-	{  
-		//printf("isatty success!\n");  
-	}                
-	printf("fd->open=%d success!\n",fd);  
+	// //测试是否为终端设备      
+	// if(0 == isatty(STDIN_FILENO))  
+	// {  
+		// log_out("standard input is not a terminal device\n");  
+		// return(FALSE);  
+	// }  
+	// else  
+	// {  
+		// //log_out("isatty success!\n");  
+	// }                
+	log_out("fd->open=%d success!\n",fd);  
 	return fd;  
 }  
 // /******************************************************************* 
@@ -80,10 +75,10 @@ int UART0_Set(int fd,int speed,int flow_ctrl,int databits,int stopbits,int parit
            
 	struct termios options;  
      
-	//tcgetattr(fd,&options)得到与fd指向对象的相关参数，并将它们保存于options,该函数还可以测试配置是否正确，该串口是否可用等。若调用成功，函数返回值为0，若调用失败，函数返回值为1.   
+	//tcgetattr(fd,&options)得到与fd指向对象的相关参数，并将它们保存于options,该函数还可以测试配置是否正确，该串口是否可用等。若调用成功，函数返回值为0，若调用失败，函数返回值为1.
 	if( tcgetattr( fd,&options)  !=  0)  
-	{  
-		perror("SetupSerial 1");      
+	{
+		log_out("set port %d...\n",fd);
 		return(FALSE);   
 	}  
     
@@ -135,7 +130,7 @@ int UART0_Set(int fd,int speed,int flow_ctrl,int databits,int stopbits,int parit
                  options.c_cflag |= CS8;  
                  break;    
 		default:     
-                 fprintf(stderr,"Unsupported data size\n");  
+                 log_out("Unsupported data size\n");  
                  return (FALSE);   
     }  
     //设置校验位  
@@ -163,7 +158,7 @@ int UART0_Set(int fd,int speed,int flow_ctrl,int databits,int stopbits,int parit
                  options.c_cflag &= ~CSTOPB;  
                  break;   
         default:    
-                 fprintf(stderr,"Unsupported parity\n");      
+                 log_out("Unsupported parity\n");      
                  return (FALSE);   
     }   
     // 设置停止位   
@@ -174,7 +169,7 @@ int UART0_Set(int fd,int speed,int flow_ctrl,int databits,int stopbits,int parit
 		case 2:     
                  options.c_cflag |= CSTOPB; break;  
 		default:     
-                       fprintf(stderr,"Unsupported stop bits\n");   
+                       log_out("Unsupported stop bits\n");   
                        return (FALSE);  
     }  
      
@@ -194,7 +189,7 @@ int UART0_Set(int fd,int speed,int flow_ctrl,int databits,int stopbits,int parit
     //激活配置 (将修改后的termios数据设置到串口中）  
     if (tcsetattr(fd,TCSANOW,&options) != 0)    
 	{  
-		perror("com set error!\n");    
+		log_out("com set error!\n");    
 		return (FALSE);   
 	}  
     return (TRUE);   
@@ -215,7 +210,7 @@ int UART0_Init(int fd, int speed,int flow_ctrl,int databits,int stopbits,int par
 {  
     int err;  
     //设置串口数据帧格式  
-    //if (UART0_Set(fd,19200,0,8,1,'N') == FALSE)  
+    //if (UART0_Set(fd,19200,0,8,1,'N') == FALSE)
 	if (UART0_Set(fd,speed,flow_ctrl,databits,stopbits,parity) == FALSE)  
 	{                                                           
 		return FALSE;  
@@ -252,14 +247,15 @@ int UART0_Recv(int fd, char *rcv_buf,int data_len)
  
     if(fs_sel)  
 	{  
-		len = read(fd,rcv_buf,data_len);  
+		len = read(fd,rcv_buf,data_len);
+		//log_out("uart recv: %s\n",rcv_buf);
 		return len;  
 	}  
     else  
 	{  
-		printf("Sorry,I am wrong!");  
+		log_out("Sorry,I am wrong!");  
 		return FALSE;  
-	}       
+	}
 }  
 // /******************************************************************** 
 // * 名称：                  UART0_Send 
@@ -273,19 +269,13 @@ int UART0_Send(int fd, char *send_buf,int data_len)
 {  
     int len = 0;  
      
-    len = write(fd,send_buf,data_len);  
-    if (len == data_len )  
-	{  
-		//printf("send: %s\n",send_buf);
-		return len;  
-	}       
-    else     
-	{  
-                 
-		tcflush(fd,TCOFLUSH);  
-		return FALSE;  
+    len = write(fd,send_buf,data_len);
+    if (len != data_len )
+	{ 
+		tcflush(fd,TCOFLUSH);
+		len = 0;
 	}  
-     
+	return len;
 }  
 
 

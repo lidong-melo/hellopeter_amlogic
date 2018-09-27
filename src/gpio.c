@@ -1,6 +1,12 @@
 // jetsonGPIO.c
 
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
 #include "gpio.h"
 
 
@@ -22,15 +28,23 @@ int gpio_uninit(int gpio_id)
 }
 
 
-// int gpio_test(int gpio_id)
-// {
-	// gpio_init(gpio_id);
-    // gpioSetValue(gpio_id, low);
-    // sleep(1);
-    // gpioSetValue(gpio_id, high);
-	// sleep(1);
-	// gpio_uninit(gpio_id);
-// }
+int gpio_test(int gpio_id)
+{
+	gpio_init(gpio_id);
+    gpioSetValue(gpio_id, low);
+    sleep(1);
+    gpioSetValue(gpio_id, high);
+	sleep(1);
+    gpioSetValue(gpio_id, low);
+    sleep(1);
+    gpioSetValue(gpio_id, high);
+	sleep(1);
+    gpioSetValue(gpio_id, low);
+    sleep(1);
+    gpioSetValue(gpio_id, high);
+	sleep(1);
+	gpio_uninit(gpio_id);
+}
 
 
 //
