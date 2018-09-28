@@ -6,8 +6,8 @@ app_fifo_t recv_fifo_p;
 uint8_t recv_fifo_buf[256];
 
 
-static int flag_play = FALSE;
-static int flag_record = FALSE;
+static int flag_play = TRUE;
+static int flag_record = TRUE;
 
 
 void *thread_alsa_test(void * arg)
@@ -144,6 +144,8 @@ void *thread_serial_test( void *arg)
 	char str_play[] = "start play";
 	char str_record[] = "start record";
 	char str_stop[] = "stop";
+	char str_led_on[] = "led_on";
+	char str_led_off[] = "led_off";
 	char str_fail[] = "can't recognize: ";
 	char str_temp[300];
 	
@@ -193,7 +195,6 @@ void *thread_serial_test( void *arg)
 				UART0_Send(fd,str_stop,strlen(str_stop));
 				flag_play = FALSE;
 				flag_record = FALSE;
-				gpioSetValue(gpio_id, low);
 				log_out("stop play & record!\n");
 			}
 			else if (strstr(line_buf, str_play) != NULL)
@@ -206,8 +207,19 @@ void *thread_serial_test( void *arg)
 			{
 				UART0_Send(fd,str_record,strlen(str_record));
 				flag_record = TRUE;
-				gpioSetValue(gpio_id, high);
 				log_out("start record!\n");
+			}
+			else if (strstr(line_buf, str_led_on) != NULL)
+			{
+				UART0_Send(fd,str_led_on,strlen(str_led_on));
+				gpioSetValue(gpio_id, high);
+				log_out("led on!\n");
+			}
+			else if (strstr(line_buf, str_led_off) != NULL)
+			{
+				UART0_Send(fd,str_led_off,strlen(str_led_off));
+				gpioSetValue(gpio_id, low);
+				log_out("led off!\n");
 			}
 			else
 			{
