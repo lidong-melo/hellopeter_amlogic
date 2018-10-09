@@ -18,7 +18,8 @@ int alsa_play_init(play_handle_t * play_handle)
                                 play_handle->channels,
                                 play_handle->rate,
                                 1, //soft_resample
-                                500000);// 0.5sec 
+								20000);
+                                //500000);// 0.5sec 
     if (ret < 0)
         log_out("snd_pcm_hw_params");
 	
