@@ -1,0 +1,5 @@
+config BR2_PACKAGE_HELLOPETER_TEST
+    bool "hellopeter_test"
+    help
+      Peter said: AAAAAA
+      see http://somewhere.com for more on this software
