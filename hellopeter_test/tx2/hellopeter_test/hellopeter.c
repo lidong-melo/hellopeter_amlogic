@@ -35,7 +35,11 @@ void *thread_alsa_record_test(void * arg)
 	int i=0;
 	char test_buf[50] = {0};
 	//char str_test_flag[30] = "this is lidong test!\n";
-	char str_test_flag[30] = "this";
+//	char str_test_flag[30] = "this";
+	char * pt_char = 0;
+	int time_a113 = 0;
+	int time_tx2 = 0;
+	int delta = 0;
 
 	//play_handle_t play_handle;
 	record_handle_t record_handle;
@@ -99,8 +103,17 @@ void *thread_alsa_record_test(void * arg)
 					log_out("\n-----------------");
 					log_out("record channel find index:%d\n",i);
 					log_out("tx2 time is: %s\n", test_buf);
+					pt_char = strchr(test_buf, '.');
+					//printf("%s\n", pt_char);
+					time_tx2 = atoi(pt_char+1);
 					memcpy(test_buf, record_handle.buffer+i+6, 30); // copy time stamp
 					log_out("a113 time is: %s\n", test_buf);
+					pt_char = strchr(test_buf, '.');
+					time_a113 = atoi(pt_char+1);
+					delta = time_tx2 - time_a113;
+					if( delta < 0)
+						delta += 1000000;
+					printf("delta: %d-%d = %d.%dms\n", time_tx2,time_a113, delta/1000,delta%1000);
 					break;
 				}
 			}
@@ -119,7 +132,7 @@ void *thread_alsa_play_test(void * arg)
     int ret;
 	int dir = *((int*)arg);
 	char test_buf[50] = {0};
-	char str_test_flag[30] = "this is lidong test!\n";
+//	char str_test_flag[30] = "this is lidong test!\n";
 	int cycle = 20;
 	int count = 0;
 	
@@ -217,12 +230,47 @@ int main(int argc, char *argv[])
 	int ret_thrd1, ret_thrd2, ret_thrd3;
     
 	pthread_t thread1, thread2, thread3;
+
+	time_t file_name_time = time(NULL);
+	struct tm* tm_log = localtime(&file_name_time);
+	char file_path[200];
+	int volume_value = 0;
 	
-	int ret_log = log_init();
+	//直接调用mkdir函数
+	//建立一个名为log的文件夹
+	//权限为0777，即拥有者权限为读、写、执行, 拥有者所在组的权限为读、写、执行, 其它用户的权限为读、写、执行
+	if(access("./log", F_OK) != 0)
+	{  
+		printf("dir log does not exist!\n");
+		if(mkdir("./log", 0755) == -1)  
+		{   
+			log_init("mkdir ./log error\n");  
+			printf("create log dir failed!\n");
+			return -1;   
+		}
+		else
+		{
+			printf("create log dir successfully!\n");
+			
+		}
+	}
+	else
+	{
+		printf("dir log already exist!\n");
+	}
+	
+	//FILE * pFile;
+	sprintf(file_path,"./log/log_%04d%02d%02d_%02d%02d%02d.txt",tm_log->tm_year + 1900, tm_log->tm_mon + 1, tm_log->tm_mday, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec);
+	
+	int ret_log = log_init(file_path);
 	
 	if (ret_log != 0)
 	{
-		log_out("log file init fail!\n");
+		printf("log file create fail!\n");
+	}
+	else
+	{
+		printf("log file create successfully! log file = %s\n", file_path);
 	}
 	
 
@@ -248,10 +296,13 @@ int main(int argc, char *argv[])
     // } else {
         // log_out("Create serial thread successfully!\n");
     // }	
+	//volume_init();
 
 	while(1)
 	{
 		sleep(1);
+		//volume_value = volume_read();
+		printf("volume=%d\n",volume_value);
 		// if (flag_register == FALSE)
 			// UART0_Send(fd,str_amlogic_ready,strlen(str_amlogic_ready));
 	}
