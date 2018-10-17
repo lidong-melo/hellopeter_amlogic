@@ -25,7 +25,12 @@ static FILE* pFile =  NULL;
  
 int log_test(void) 
 {
-	log_init();
+	time_t file_name_time = time(NULL);
+	struct tm* tm_log = localtime(&file_name_time);
+	char file_path[200];
+	//FILE * pFile;
+	sprintf(file_path,"./log/log_%04d%02d%02d_%02d%02d%02d.txt",tm_log->tm_year + 1900, tm_log->tm_mon + 1, tm_log->tm_mday, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec);
+	log_init(file_path);
 	if (pFile == NULL)
 	{
 		log_out("log file init fail!\n");
@@ -40,13 +45,8 @@ int log_test(void)
 }
 
 
-int log_init(void)
+int log_init(char * file_path)
 {
-	time_t file_name_time = time(NULL);
-	struct tm* tm_log = localtime(&file_name_time);
-	char file_path[200];
-	//FILE * pFile;
-	sprintf(file_path,"./log_%04d%02d%02d_%02d%02d%02d.txt",tm_log->tm_year + 1900, tm_log->tm_mon + 1, tm_log->tm_mday, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec);
 	pFile = fopen(file_path, "w+");
 	if(NULL == pFile)
 		return -1;
