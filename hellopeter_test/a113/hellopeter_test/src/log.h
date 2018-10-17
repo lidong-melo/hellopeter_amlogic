@@ -14,7 +14,7 @@
  
 int log_test(void);
 
-int log_init(void);
+int log_init(char * file_path);
 
 int log_uninit(void);
 

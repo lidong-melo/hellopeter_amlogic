@@ -1,4 +1,6 @@
 #include "hellopeter_test.h"
+//#include <armadillo>
+#include <memory>
 
 
 
@@ -32,8 +34,13 @@ void *thread_alsa_test(void * arg)
     int ret;
 	int dir = *((int*)arg);
 	char test_buf[60] = {0};
-	char str_test_flag[21] = "this is lidong test!";
+	//char str_test_flag[21] = "this is lidong test!";
 	//char str_record_test_flag[30] = "this is lidong test!\n";
+	char * pt_char = 0;
+	int time_a113 = 0;
+	int time_tx2 = 0;
+	int delta = 0;
+	
 	int cycle = 20;
 	int count = 0;
 	int i=0;
@@ -148,13 +155,21 @@ void *thread_alsa_test(void * arg)
 				for(i=0;i<3072*4-5;i++ )
 				{
 					if((record_handle.buffer[i] == 50) && (record_handle.buffer[i+1] == 51)&&(record_handle.buffer[i+2] == 52)&&(record_handle.buffer[i+3] == 53)&&(record_handle.buffer[i+4] == 54)&&(record_handle.buffer[i+5] == 55))
-					{
+					{						
 						get_systime(test_buf);
 						log_out("\n-----------------");
 						log_out("play channel find index:%d\n",i);
 						log_out("a113 time is: %s\n", test_buf);
+						pt_char = strchr(test_buf, '.');
+						time_a113 = atoi(pt_char+1);
 						memcpy(test_buf, record_handle.buffer+i+6, 30); // copy time stamp
 						log_out("tx2 time is: %s\n", test_buf);
+						pt_char = strchr(test_buf, '.');
+						time_tx2 = atoi(pt_char+1);
+						delta = time_a113 - time_tx2;
+						if( delta < 0)
+							delta += 1000000;
+						printf("delta: %d-%d = %d.%dms\n", time_a113, time_tx2, delta/1000,delta%1000);
 						break;
 					}
 				}
@@ -196,11 +211,45 @@ int main(int argc, char *argv[])
     
 	pthread_t thread1, thread2, thread3;
 	
-	int ret_log = log_init();
+	time_t file_name_time = time(NULL);
+	struct tm* tm_log = localtime(&file_name_time);
+	char file_path[200];
+	
+	//直接调用mkdir函数
+	//建立一个名为log的文件夹
+	//权限为0777，即拥有者权限为读、写、执行, 拥有者所在组的权限为读、写、执行, 其它用户的权限为读、写、执行
+	if(access("./log", F_OK) != 0)
+	{  
+		printf("dir log does not exist!\n");
+		if(mkdir("./log", 0755) == -1)  
+		{   
+			log_init("mkdir ./log error\n");  
+			printf("create log dir failed!\n");
+			return -1;   
+		}
+		else
+		{
+			printf("create log dir successfully!\n");
+			
+		}
+	}
+	else
+	{
+		printf("dir log already exist!\n");
+	}
+	
+	//FILE * pFile;
+	sprintf(file_path,"./log/log_%04d%02d%02d_%02d%02d%02d.txt",tm_log->tm_year + 1900, tm_log->tm_mon + 1, tm_log->tm_mday, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec);
+	
+	int ret_log = log_init(file_path);
 	
 	if (ret_log != 0)
 	{
-		log_out("log file init fail!\n");
+		printf("log file create fail!\n");
+	}
+	else
+	{
+		printf("log file create successfully! log file = %s\n", file_path);
 	}
 	
 

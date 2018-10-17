@@ -1,5 +1,6 @@
 #
-## sample Makefile for hellopeter_test
+## sample Makefile for hellopeter_test for a113
+#  tx2 test code not here, but on tx2
 #
 #
 OBJ = hellopeter_test.o alsa_record.o alsa_play.o serial_port.o gpio.o fifo.o log.o
