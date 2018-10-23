@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
-
+#include <time.h>
+#include <sys/time.h>
+#include <sys/stat.h> //创建文件夹用
 //#include "serial_test.h"
 #include "alsa/asoundlib.h"
 #include "alsa_record.h"
@@ -35,7 +37,8 @@
 #define RECORD_RATE 16000
 #define RECORD_CHANNELS 8
 
-#define BUFFER_TIME	64000
+//#define BUFFER_TIME	64000
+#define BUFFER_TIME	8000
 #define PERIODS 4
 
 

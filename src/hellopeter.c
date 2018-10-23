@@ -8,12 +8,17 @@ uint8_t recv_fifo_buf[256];
 
 static int flag_play = TRUE;
 static int flag_record = TRUE;
+static int flag_register = FALSE;	
+static int fd;                            //文件描述符 
+
 
 
 void *thread_alsa_test(void * arg)
 {
     int ret;
 	int dir = *((int*)arg);
+	int count1 = 0;
+	int count2 = 0;
 
 	play_handle_t play_handle;
 	record_handle_t record_handle;
@@ -89,33 +94,42 @@ void *thread_alsa_test(void * arg)
 		}
 		
 		
-		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, play_handle.frames);
+		ret = snd_pcm_readi(record_handle.pcm, record_handle.buffer, play_handle.frames/4);
 		if (ret == -EAGAIN ) {
 			snd_pcm_wait(record_handle.pcm, 1000);
 		} else if (ret == -EPIPE) {
 			snd_pcm_prepare(record_handle.pcm);
-			log_out("snd_pcm_readi return EPIPE.\n");
+			log_out("dir %d, snd_pcm_readi return EPIPE.\n", dir);
 		} else if (ret == -ESTRPIPE) {
-			log_out("snd_pcm_readi return ESTRPIPE.\n");
+			log_out("dir %d, snd_pcm_readi return ESTRPIPE.\n", dir);
 		} else if (ret < 0) {
-			log_out("snd_pcm_readi return fail.\n");
+			if(count1++ == 30)
+			{
+				count1 = 0;
+				log_out("10 times: dir %d, snd_pcm_readi return fail.\n", dir);
+			}
+			
 		}
 
 		if(ret>0)
 		{
-			while((ret = snd_pcm_writei(play_handle.pcm, play_handle.buffer, play_handle.frames))<0)
+			while((ret = snd_pcm_writei(play_handle.pcm, play_handle.buffer, play_handle.frames/4))<0)
 			{
 				usleep(1000);
 				if(ret == -EPIPE)
 				{
 					// EPIPE means underrun 
-					log_out("underrun occurred\n");
+					log_out("dir %d, underrun occurred\n", dir);
 					//完成硬件参数设置，使设备准备好
 					snd_pcm_prepare(play_handle.pcm);
 				}
 				else if (ret < 0)
 				{
-					log_out("dir %d, error from writei: %s\n", dir, snd_strerror(ret));
+					if(count2++ == 30)
+					{
+						count2 = 0;
+						log_out("10 times: dir %d, error from writei\n", dir);
+					}
 				}
 			}
 		}
@@ -130,24 +144,26 @@ void *thread_alsa_test(void * arg)
 
 void *thread_serial_test( void *arg)
 {  
-    int fd;                            //文件描述符  
+
     int err;                           //返回调用函数的状态  
     int len;
 	char port_id[20]="/dev/ttyGS0";
 	
 	
-    char rcv_buf[256];
-	char line_buf[256];
+    char rcv_buf[256]={0};
+	char line_buf[256]={0};
 	uint32_t line_len = 0;
     
 	//char *str_temp;
-	char str_play[] = "start play";
-	char str_record[] = "start record";
-	char str_stop[] = "stop";
-	char str_led_on[] = "led_on";
-	char str_led_off[] = "led_off";
+	char str_play[] = "start play\n";
+	char str_record[] = "start record\n";
+	char str_stop[] = "stop\n";
+	char str_led_on[] = "led on\n";
+	char str_led_off[] = "led off\n";
 	char str_fail[] = "can't recognize: ";
-	char str_temp[300];
+	
+	char str_tx2_ready[] = "tx2 ready!\n";
+	char str_temp[300]= {0};
 	
 	//GPIONumber gpio_id = gpio500;
 	GPIONumber gpio_id = gpio505;
@@ -177,7 +193,7 @@ void *thread_serial_test( void *arg)
 		//log_out("Set Port Exactly!\n");
 	}while(FALSE == err || FALSE == fd);
      
-                                       
+	
 	while (1) //循环读取数据  
 	{    
 		UART0_Recv(fd, rcv_buf,1);
@@ -221,6 +237,12 @@ void *thread_serial_test( void *arg)
 				gpioSetValue(gpio_id, low);
 				log_out("led off!\n");
 			}
+			else if(strstr(line_buf, str_tx2_ready) != NULL)
+			{
+				flag_register = TRUE;
+				UART0_Send(fd,str_tx2_ready,strlen(str_tx2_ready));
+				log_out("tx2 is ready!\n");
+			}
 			else
 			{
 				strcpy(str_temp, str_fail);
@@ -245,21 +267,58 @@ int main(int argc, char *argv[])
 	int arg1 = AUDIO_PLAY;
     int arg2 = AUDIO_RECORD;
 	
+	char str_amlogic_ready[] = "Amlogic ready\n";
+	char str_mkdir[] = "mkdir ./log error\n";
+	char file_path[200];
+	
 	int ret_thrd1, ret_thrd2, ret_thrd3;
-    
 	pthread_t thread1, thread2, thread3;
 	
-	int ret_log = log_init();
+	time_t file_name_time = time(NULL);
+    struct tm* tm_log = localtime(&file_name_time);
 	
-	if (ret_log != 0)
-	{
-		log_out("log file init fail!\n");
+
+	
+	//直接调用mkdir函数
+	//建立一个名为log的文件夹
+	//权限为0777，即拥有者权限为读、写、执行, 拥有者所在组的权限为读、写、执行, 其它用户的权限为读、写、执行
+	if(access("./log", F_OK) != 0)
+	{  
+		printf("dir log does not exist!\n");
+		if(mkdir("./log", 0755) == -1)  
+		{   
+			log_init(str_mkdir);  
+			printf("create log dir failed!\n");
+			return -1;   
+		}
+		else
+		{
+			printf("create log dir successfully!\n");
+			
+		}
 	}
+	else
+	{
+		printf("dir log already exist!\n");
+	}
+	
+	
+	if (argc > 1)
+	{
+		sprintf(file_path,"./log/log_%s.txt", argv[1]);
+	}
+	else
+	{	
+		//FILE * pFile;
+		sprintf(file_path,"./log/log_%04d%02d%02d_%02d%02d%02d.txt",tm_log->tm_year + 1900, tm_log->tm_mon + 1, tm_log->tm_mday, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec);
+	}
+	int ret_log = log_init(file_path);
+
 	
 
     ret_thrd1 = pthread_create(&thread1, NULL, &thread_alsa_test, (void*)&arg1);
     ret_thrd2 = pthread_create(&thread2, NULL, &thread_alsa_test, (void*)&arg2);
-	ret_thrd3 = pthread_create(&thread2, NULL, &thread_serial_test, (void*)0);
+	//ret_thrd3 = pthread_create(&thread2, NULL, &thread_serial_test, (void*)0);
 
     // 线程创建成功，返回0,失败返回失败号
     if (ret_thrd1 != 0) {
@@ -274,15 +333,17 @@ int main(int argc, char *argv[])
         log_out("Create record thread successfully!\n");
     }
 	
-    if (ret_thrd3 != 0) {
-        log_out("Create serial thread failed!\n");
-    } else {
-        log_out("Create serial thread successfully!\n");
-    }	
+    // if (ret_thrd3 != 0) {
+        // log_out("Create serial thread failed!\n");
+    // } else {
+        // log_out("Create serial thread successfully!\n");
+    // }	
 
 	while(1)
 	{
 		sleep(1);
+		// if (flag_register == FALSE)
+			// UART0_Send(fd,str_amlogic_ready,strlen(str_amlogic_ready));
 	}
 
 	log_uninit();
